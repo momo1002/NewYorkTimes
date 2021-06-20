@@ -13,9 +13,12 @@ const section      = document.querySelector('section');
 
 
 submitButton.addEventListener('click', submitSearch);
+nextButton.addEventListener('click', nextPage);
+prevButton.addEventListener('click', prevPage);
 
 
 function submitSearch(e){
+    pageNumber = 0;
     fetchResults(e);
 }
 
@@ -36,6 +39,10 @@ function fetchResults(e){
 }
 
 function displayResults(json){
+    while (section.firstChild) {
+        section.removeChild(section.firstChild);
+    }
+    
     const articles = json.response.docs;
 
     for (let i = 0; i < articles.length; i++) {
@@ -79,4 +86,14 @@ function displayResults(json){
         article.appendChild(source);
         section.appendChild(article);
     }
+}
+function nextPage(e){
+    pageNumber++;
+    fetchResults(e);
+}
+function prevPage(e){
+    if(pageNumber > 0){
+        pageNumber--;
+    }
+    fetchResults(e);
 }
