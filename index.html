@@ -10,7 +10,7 @@
     <div class="controls">
         <form>
             <p>
-                <input type="text" id="search" class="search" required />
+                <input type="text" id="search" class="search" value="covid" required />
             </p>
             <p>
                 <input type="date" id="start-date" class="start-date" pattern="[0-9]{8}">
@@ -49,18 +49,30 @@
         const nav     = document.querySelector('nav');
 
         searchBtn.addEventListener('submit', submitSearch);
+        nextBtn.addEventListener('click', nextPage);
+        prevBtn.addEventListener('click', prevPage);
+
         let pageNumber;
+        nav.style.display = "none";
 
         function submitSearch(e){
             pageNumber = 0;
+            nav.style.display = "block";
             fetchResults(e);
         }
 
         function fetchResults(e){
             e.preventDefault();
+            if(pageNumber > 0){
+                prevBtn.disabled = false;
+                prevBtn.textContent = "Prev10";
+            } else {
+                prevBtn.disabled = true;
+                prevBtn.textContent = "Prev";
+            }
             url = baseURL
                 + '?api-key=' + API_KEY
-                + '&q=' + searchBox.nodeValue
+                + '&q=' + searchBox.value
                 + '&page=' + pageNumber
                 + '&fq=document_type:("article")';
 
@@ -71,20 +83,71 @@
                 url += '&end_date=' + endDate.value; 
             }
 
+            fetch(url)
+            .then(function(result){ return result.json(); })
+            .then(function(json){ displayResults(json); })
+            .catch(error => console.log(error.message));
         }
 
-        fetch(url)
-        .then(function(result){ return result.json(); })
-        .then(function(json){ displayResults(json); })
-
-        // fetch()
-        // .then()
-        // .then();
 
         function displayResults(json){
-            
+            while (section.firstChild) {
+                section.removeChild(section.firstChild);
+            }
+            const articles = json.response.docs;
+
+
+
+            for (let i = 0; i < articles.length; i++) {
+                const article = document.createElement('article');
+                const link    = document.createElement('a');
+                const heading = document.createElement('h2');
+                const img     = document.createElement('img');
+                const para1   = document.createElement('p');
+                const para2   = document.createElement('p');
+                const pubdate = document.createElement('span');
+                const source  = document.createElement('span'); 
+                const current = articles[i];
+
+                link.href = current.web_url;
+                link.textContent = current.headline.main;
+                para1.textContent = current.snippet;
+
+                for (let j = 0; j < current.keywords.length; j++) {
+                    let span = document.createElement('span');
+                    span.textContent += current.keywords[j].value;
+                    para2.appendChild(span);
+                }
+
+                img.src = 'http://www.nytimes.com/' +　current.multimedia[19].url;
+                img.alt = current.headline.main;
+
+                pubdate.textContent = current.pub_date;
+                source.textContent  = current.source;
+
+                article.appendChild(heading);
+                heading.appendChild(link);
+                article.appendChild(img);
+                article.appendChild(para1);
+                article.appendChild(para2);
+                article.appendChild(pubdate);
+                article.appendChild(source);
+                section.appendChild(article);
+            }
         }
 
+        function nextPage(e){
+            pageNumber++;
+            fetchResults(e);
+        }
+        function prevPage(e){
+            if(pageNumber > 0){
+                pageNumber--;
+                fetchResults(e);
+            } else {
+                prevBtn.disabled = true;
+            }
+        }
 
     </script>
 </body>
